@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique @db.VarChar(64)
+  displayName  String   @db.VarChar(128)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile       Profile?
+  foodLogs      FoodLogEntry[]
+  waterLogs     WaterLogEntry[]
+  weightEntries WeightEntry[]
+  customFoods   CustomFood[]
+  coachMessages CoachMessage[]
+  waterReminder WaterReminderSettings?
+
+  @@index([username])
+  @@map("users")
+}
+
+model Profile {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gender       String  @db.VarChar(16)
+  age          Float
+  height       Float
+  weight       Float
+  activity     Float
+  goal         String  @db.VarChar(16)
+  targetWeight Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@map("profiles")
+}
+
+model FoodLogEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logDate   String   @db.VarChar(10)
+  meal      String   @db.VarChar(32)
+  name      String   @db.VarChar(256)
+  grams     Float
+  calories  Int
+  protein   Float    @default(0)
+  carbs     Float    @default(0)
+  fat       Float    @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, logDate])
+  @@index([logDate])
+  @@map("food_log_entries")
+}
+
+model WaterLogEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logDate   String   @db.VarChar(10)
+  ml        Int
+  timeLabel String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  @@index([userId, logDate])
+  @@map("water_log_entries")
+}
+
+model WeightEntry {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logDate   String   @db.VarChar(10)
+  weight    Float
+  createdAt DateTime @default(now())
+
+  @@unique([userId, logDate])
+  @@index([userId, logDate])
+  @@map("weight_entries")
+}
+
+model CustomFood {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(256)
+  calories  Float
+  protein   Float    @default(0)
+  carbs     Float    @default(0)
+  fat       Float    @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("custom_foods")
+}
+
+model CoachMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @db.VarChar(16)
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("coach_messages")
+}
+
+model WaterReminderSettings {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled  Boolean @default(false)
+  interval Int     @default(2)
+
+  @@map("water_reminder_settings")
+}
